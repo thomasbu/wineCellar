@@ -2,16 +2,22 @@ package io.yocto.lacavedeyocto.repository.implementation;
 
 import io.yocto.lacavedeyocto.domain.Role;
 import io.yocto.lacavedeyocto.domain.User;
+import io.yocto.lacavedeyocto.domain.UserPrincipal;
 import io.yocto.lacavedeyocto.exception.ApiException;
 import io.yocto.lacavedeyocto.repository.RoleRepository;
 import io.yocto.lacavedeyocto.repository.UserRepository;
+import io.yocto.lacavedeyocto.rowmapper.UserRowMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -27,15 +33,17 @@ import static java.util.Objects.requireNonNull;
 @Repository
 @RequiredArgsConstructor
 @Slf4j
-public class UserRepositoryImpl implements UserRepository<User> {
+public class UserRepositoryImpl implements UserRepository<User>, UserDetailsService {
 
 
     private final NamedParameterJdbcTemplate jdbc;
     private final RoleRepository<Role> roleRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
+
     @Override
     public User create(User user) {
-        if(getCountEmail(user.getEmail().trim().toLowerCase()) > 0) throw new ApiException("Email already in use. Use a different email and try again");
+        if (getCountEmail(user.getEmail().trim().toLowerCase()) > 0)
+            throw new ApiException("Email already in use. Use a different email and try again");
         try {
             KeyHolder holder = new GeneratedKeyHolder();
             SqlParameterSource parameters = getSqlParameterSource(user);
@@ -48,7 +56,7 @@ public class UserRepositoryImpl implements UserRepository<User> {
             user.setEnabled(false);
             user.setNotLocked(true);
             return user;
-        }  catch (Exception exception) {
+        } catch (Exception exception) {
             log.error(exception.getMessage());
             throw new ApiException("An error occurred. Please try again.");
         }
@@ -78,5 +86,32 @@ public class UserRepositoryImpl implements UserRepository<User> {
 
     private String getVerificationUrl(String key, String type) {
         return ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/verify" + type + "/" + key).toUriString();
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = getUserByEmail(email);
+        if (user == null) {
+            log.error("User not found in the database");
+            throw new UsernameNotFoundException("User not found in the database");
+        } else {
+            log.info("User found in the database: {}", email);
+            UserDetails userDetails = new UserPrincipal(user, roleRepository.getRoleByUserId(user.getId()).getPermission());
+            log.info("userDetails: {}", userDetails);
+            return userDetails;
+        }
+    }
+    @Override
+    public User getUserByEmail(String email) {
+        try {
+            User user = jdbc.queryForObject(SELECT_USER_BY_EMAIL_QUERY, of("email", email), new UserRowMapper());
+            return user;
+        } catch (EmptyResultDataAccessException exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("No user found by email : " + email);
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again.");
+        }
     }
 }

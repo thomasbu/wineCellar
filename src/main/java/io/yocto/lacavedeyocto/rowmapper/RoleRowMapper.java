@@ -1,6 +1,7 @@
 package io.yocto.lacavedeyocto.rowmapper;
 
 import io.yocto.lacavedeyocto.domain.Role;
+import io.yocto.lacavedeyocto.domain.User;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;

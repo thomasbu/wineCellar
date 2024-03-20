@@ -1,6 +1,8 @@
 package io.yocto.lacavedeyocto.repository.implementation;
 
 import io.yocto.lacavedeyocto.domain.Role;
+import io.yocto.lacavedeyocto.domain.User;
+import io.yocto.lacavedeyocto.domain.UserPrincipal;
 import io.yocto.lacavedeyocto.exception.ApiException;
 import io.yocto.lacavedeyocto.repository.RoleRepository;
 import io.yocto.lacavedeyocto.rowmapper.RoleRowMapper;
@@ -8,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Repository;
 
 import java.util.Objects;
@@ -56,7 +60,15 @@ public class RoleRepositoryImpl implements RoleRepository<Role> {
 
     @Override
     public Role getRoleByUserId(Long userId) {
-        return null;
+        log.info("adding role to user id: {}", userId);
+        try {
+            return jdbc.queryForObject(SELECT_ROLE_BY_ID_QUERY, of("id", userId), new RoleRowMapper());
+        } catch (EmptyResultDataAccessException exception) {
+            throw new ApiException("No role found by name: " + ROLE_USER.name());
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again");
+        }
     }
 
     @Override
