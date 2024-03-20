@@ -1,3 +1,7 @@
 spring:
   profiles:
     active: dev
+
+application:
+  title: Yocto Company
+  version: 1.0
