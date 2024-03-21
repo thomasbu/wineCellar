@@ -1,10 +1,13 @@
 package io.yocto.lacavedeyocto.dto;
 
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserDTO {
     private Long id;
     private String firstName;
@@ -18,4 +21,6 @@ public class UserDTO {
     private boolean enabled;
     private boolean isNotLocked;
     private LocalDateTime createdAt;
+    private String roleName;
+    private String permissions;
 }
