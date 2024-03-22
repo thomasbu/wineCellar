@@ -22,6 +22,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.util.Collection;
 import java.util.UUID;
 
 import static io.yocto.lacavedeyocto.enumeration.RoleType.ROLE_USER;
@@ -63,8 +64,20 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
     }
 
     @Override
-    public User get(Long id) {
+    public Collection<User> list(int page, int pageSize) {
         return null;
+    }
+
+    @Override
+    public User get(Long id) {
+        try {
+            return jdbc.queryForObject(SELECT_USER_BY_ID_QUERY, of("id", id), new UserRowMapper());
+        } catch (EmptyResultDataAccessException exception) {
+            throw new ApiException("No User found by id: " + id);
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again.");
+        }
     }
 
     @Override
@@ -91,14 +104,12 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = getUserByEmail(email);
-        if (user == null) {
+        if(user == null) {
             log.error("User not found in the database");
             throw new UsernameNotFoundException("User not found in the database");
         } else {
             log.info("User found in the database: {}", email);
-            UserDetails userDetails = new UserPrincipal(user, roleRepository.getRoleByUserId(user.getId()).getPermission());
-            log.info("userDetails: {}", userDetails);
-            return userDetails;
+            return new UserPrincipal(user, roleRepository.getRoleByUserId(user.getId()));
         }
     }
     @Override

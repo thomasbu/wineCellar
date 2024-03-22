@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.Objects;
 
 import static io.yocto.lacavedeyocto.enumeration.RoleType.ROLE_USER;
@@ -28,14 +29,29 @@ public class RoleRepositoryImpl implements RoleRepository<Role> {
 
     private final NamedParameterJdbcTemplate jdbc;
 
-
     @Override
     public Role create(Role data) {
         return null;
     }
 
     @Override
+    public Collection<Role> list() {
+        log.info("Fetching all roles");
+        try {
+            return jdbc.query(SELECT_ROLES_QUERY, new RoleRowMapper());
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again.");
+        }
+    }
+
+    @Override
     public Role get(Long id) {
+        return null;
+    }
+
+    @Override
+    public Role update(Role data) {
         return null;
     }
 
@@ -52,22 +68,23 @@ public class RoleRepositoryImpl implements RoleRepository<Role> {
             jdbc.update(INSERT_ROLE_TO_USER_QUERY, of("userId", userId, "roleId", requireNonNull(role).getId()));
         } catch (EmptyResultDataAccessException exception) {
             throw new ApiException("No role found by name: " + ROLE_USER.name());
+
         } catch (Exception exception) {
             log.error(exception.getMessage());
-            throw new ApiException("An error occurred. Please try again");
+            throw new ApiException("An error occurred. Please try again.");
         }
     }
 
     @Override
     public Role getRoleByUserId(Long userId) {
-        log.info("adding role to user id: {}", userId);
+        log.info("Fetching role for user id: {}", userId);
         try {
             return jdbc.queryForObject(SELECT_ROLE_BY_ID_QUERY, of("id", userId), new RoleRowMapper());
         } catch (EmptyResultDataAccessException exception) {
             throw new ApiException("No role found by name: " + ROLE_USER.name());
         } catch (Exception exception) {
             log.error(exception.getMessage());
-            throw new ApiException("An error occurred. Please try again");
+            throw new ApiException("An error occurred. Please try again.");
         }
     }
 
@@ -78,7 +95,16 @@ public class RoleRepositoryImpl implements RoleRepository<Role> {
 
     @Override
     public void updateUserRole(Long userId, String roleName) {
-
+        log.info("Updating role for user id: {}", userId);
+        try {
+            Role role = jdbc.queryForObject(SELECT_ROLE_BY_NAME_QUERY, of("name", roleName), new RoleRowMapper());
+            jdbc.update(UPDATE_USER_ROLE_QUERY, of("roleId", role.getId(), "userId", userId));
+        } catch (EmptyResultDataAccessException exception) {
+            throw new ApiException("No role found by name: " + roleName);
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again.");
+        }
     }
 }
 

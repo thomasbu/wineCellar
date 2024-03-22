@@ -3,6 +3,7 @@ package io.yocto.lacavedeyocto.domain;
 import io.yocto.lacavedeyocto.dto.UserDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -11,15 +12,16 @@ import java.util.Collection;
 import static io.yocto.lacavedeyocto.dtomapper.UserDTOMapper.fromUser;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
+import static net.sf.jsqlparser.util.validation.metadata.NamedObject.role;
 
 @RequiredArgsConstructor
 public class UserPrincipal implements UserDetails {
     private final User user;
-    private final String permissions;
-//    private final Role role;
+    private final Role role;
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return stream(permissions.split(",".trim())).map(SimpleGrantedAuthority::new).collect(toList());
+        //return stream(role.getPermission().split(",".trim())).map(SimpleGrantedAuthority::new).collect(toList());
+        return AuthorityUtils.commaSeparatedStringToAuthorityList(role.getPermission());
     }
 
     @Override
@@ -51,8 +53,8 @@ public class UserPrincipal implements UserDetails {
     public boolean isEnabled() {
         return this.user.isEnabled();
     }
-//    @Override
-//    public UserDTO getUser() {
-//        return fromUser(user, role);
-//    }
+
+    public UserDTO getUser() {
+        return fromUser(user, role);
+    }
 }

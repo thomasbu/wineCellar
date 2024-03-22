@@ -6,4 +6,6 @@ import io.yocto.lacavedeyocto.dto.UserDTO;
 public interface UserService {
     UserDTO createUser(User user);
     UserDTO getUserByEmail(String email);
+
+    UserDTO getUserById(Long userId);
 }

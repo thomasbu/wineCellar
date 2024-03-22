@@ -13,14 +13,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 
 import static io.yocto.lacavedeyocto.dtomapper.UserDTOMapper.toUser;
+import static io.yocto.lacavedeyocto.utils.UserUtils.getAuthenticatedUser;
 import static java.time.LocalDateTime.now;
 import static java.util.Map.of;
 import static org.springframework.http.HttpStatus.CREATED;
@@ -62,18 +61,32 @@ public class UserResource {
                 HttpResponse.builder()
                         .timeStamp(now().toString())
                         .data(of("user", userDTO))
-                        .message("User create")
+                        .message("User created")
                         .status(CREATED)
                         .statusCode(CREATED.value())
                         .build()
         );
     }
 
+    @GetMapping("/profile")
+    public ResponseEntity<HttpResponse> profile(Authentication authentication) {
+        UserDTO user = userService.getUserByEmail(getAuthenticatedUser(authentication).getEmail());
+        System.out.println("USER : " +user);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(of("user", user, "roles", roleService.getRoles()))
+                        .message("Profile Retrieved")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+
     private URI getUri() {
         return URI.create(fromCurrentContextPath().path("/user/get/<userId>").toUriString());
     }
 
-    private UserPrincipal getUserPrincipal(UserDTO userDTO) {
-        return new UserPrincipal(toUser(userService.getUserByEmail(userDTO.getEmail())), roleService.getRoleByUserId(userDTO.getId()).getPermission());
+    private UserPrincipal getUserPrincipal(UserDTO user) {
+        return new UserPrincipal(toUser(userService.getUserByEmail(user.getEmail())), roleService.getRoleByUserId(user.getId()));
     }
 }

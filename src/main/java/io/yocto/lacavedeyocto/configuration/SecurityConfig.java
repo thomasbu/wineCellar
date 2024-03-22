@@ -1,5 +1,6 @@
 package io.yocto.lacavedeyocto.configuration;
 
+import io.yocto.lacavedeyocto.filter.CustomAuthorizationFilter;
 import io.yocto.lacavedeyocto.handler.CustomAccessDeniedHandler;
 import io.yocto.lacavedeyocto.handler.CustomAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -36,6 +38,7 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final CustomAuthorizationFilter customAuthorizationFilter;
     public static final String[] PUBLIC_URLS = { "/user/verify/password/**",
             "/user/login", "/user/verify/code/**", "/user/register/**", "/user/resetpassword/**", "/user/verify/account/**",
             "/user/refresh/token/**", "/user/image/**", "/user/new/password/**" };
@@ -56,6 +59,7 @@ public class SecurityConfig {
                                 .requestMatchers(DELETE, "/customer/delete/**")
                                 .hasAnyAuthority("DELETE:CUSTOMER")
                                 .anyRequest().authenticated());
+        http.addFilterBefore(customAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

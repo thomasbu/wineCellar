@@ -10,6 +10,7 @@ import io.yocto.lacavedeyocto.domain.UserPrincipal;
 import io.yocto.lacavedeyocto.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -27,9 +28,14 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 
+
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class TokenProvider {
+    @Value("${jwt.secret}")
+    private String secret;
+    private final UserService userService;
     private static final String YOCTO_COMPANY = "Yocto company";
     public static final String CUSTOMER_MANAGEMENT_SERVICE = "CUSTOMER_MANAGEMENT_SERVICE";
     private static final String AUTHORITIES = "authorities";
@@ -37,13 +43,9 @@ public class TokenProvider {
     private static final long REFRESH_TOKEN_EXPIRATION_TIME = 432_000_000;
     private static final String TOKEN_CANNOT_BE_VERIFIED = "Token cannot be verified";
 
-    @Value("${jwt.secret}")
-    private String secret;
-    private final UserService userService;
-
     public String createAccessToken(UserPrincipal userPrincipal) {
         return JWT.create().withIssuer(YOCTO_COMPANY).withAudience(CUSTOMER_MANAGEMENT_SERVICE)
-                .withIssuedAt(new Date()).withSubject(String.valueOf(userPrincipal.getUsername())).withArrayClaim(AUTHORITIES, getClaimsFromUser(userPrincipal))
+                .withIssuedAt(new Date()).withSubject(String.valueOf(userPrincipal.getUser().getId())).withArrayClaim(AUTHORITIES, getClaimsFromUser(userPrincipal))
                 .withExpiresAt(new Date(currentTimeMillis() + ACCESS_TOKEN_EXPIRATION_TIME))
                 .sign(HMAC512(secret.getBytes()));
 
@@ -51,7 +53,7 @@ public class TokenProvider {
 
     public String createRefreshToken(UserPrincipal userPrincipal) {
         return JWT.create().withIssuer(YOCTO_COMPANY).withAudience(CUSTOMER_MANAGEMENT_SERVICE)
-                .withIssuedAt(new Date()).withSubject(String.valueOf(userPrincipal.getUsername()))
+                .withIssuedAt(new Date()).withSubject(String.valueOf(userPrincipal.getUser().getId()))
                 .withExpiresAt(new Date(currentTimeMillis() + REFRESH_TOKEN_EXPIRATION_TIME))
                 .sign(HMAC512(secret.getBytes()));
 
@@ -71,13 +73,13 @@ public class TokenProvider {
         }
     }
 
-    public List<GrantedAuthority> getAuthorities(String token) {
+    public List<GrantedAuthority>getAuthorities(String token) {
         String[] claims = getClaimsFromToken(token);
         return stream(claims).map(SimpleGrantedAuthority::new).collect(toList());
     }
 
-    public Authentication getAuthentication(String email, List<GrantedAuthority> authorities, HttpServletRequest request) {
-        UsernamePasswordAuthenticationToken userPasswordAuthToken = new UsernamePasswordAuthenticationToken(email, null, authorities);
+    public Authentication getAuthentication(Long userId, List<GrantedAuthority> authorities, HttpServletRequest request) {
+        UsernamePasswordAuthenticationToken userPasswordAuthToken = new UsernamePasswordAuthenticationToken(userService.getUserById(userId), null, authorities);
         userPasswordAuthToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         return userPasswordAuthToken;
     }
