@@ -1,6 +1,12 @@
 jwt:
   secret: complexsecret
 
+server:
+  error:
+    path: /user/error
+    whitelabel:
+      enabled: false
+
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/mywinecellar

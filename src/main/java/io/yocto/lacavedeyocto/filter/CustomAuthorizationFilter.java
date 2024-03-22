@@ -16,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+import static io.yocto.lacavedeyocto.utils.ExceptionUtils.processError;
 import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -53,7 +54,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
         } catch (Exception exception) {
             log.info("error messaGGGeeeeee" + exception);
             log.error(exception.getMessage());
-//            processError(request, response, exception);
+            processError(request, response, exception);
         }
 
     }
