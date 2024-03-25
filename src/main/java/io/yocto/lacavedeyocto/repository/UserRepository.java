@@ -13,4 +13,10 @@ public interface UserRepository<T extends User> {
 
     /**/
     User getUserByEmail(String email);
+
+    void resetPassword(String email);
+
+    T verifyPasswordKey(String key);
+
+    void renewPassword(String key, String password, String confirmPassword);
 }

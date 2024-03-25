@@ -39,7 +39,7 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAuthorizationFilter customAuthorizationFilter;
-    public static final String[] PUBLIC_URLS = { "/user/verify/password/**",
+    public static final String[] PUBLIC_URLS = { "/user/verify/password/**", "/user/verifypassword/**",
             "/user/login", "/user/verify/code/**", "/user/register/**", "/user/resetpassword/**", "/user/verify/account/**",
             "/user/refresh/token/**", "/user/image/**", "/user/new/password/**" };
     @Bean

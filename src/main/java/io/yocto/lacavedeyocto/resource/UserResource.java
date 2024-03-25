@@ -20,6 +20,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 
 import static io.yocto.lacavedeyocto.dtomapper.UserDTOMapper.toUser;
 import static io.yocto.lacavedeyocto.utils.ExceptionUtils.processError;
@@ -107,6 +108,43 @@ public class UserResource {
             processError(request, response, exception);
             throw new ApiException(exception.getMessage());
         }
+    }
+
+    @GetMapping("/resetpassword/{email}")
+    public ResponseEntity<HttpResponse> resetPassword(@PathVariable("email") String email) {
+        userService.resetPassword(email);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message("Email sent. Please check your email to reset your password.")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+
+    @GetMapping("/verifypassword/{key}")
+    public ResponseEntity<HttpResponse> verifyPasswordUrl(@PathVariable("key") String key) {
+        UserDTO user = userService.verifyPasswordKey(key);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(of("user", user))
+                        .message("Please enter a new password")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+
+    @PostMapping ("/resetpassword/{key}/{password}/{confirmPassword}")
+    public ResponseEntity<HttpResponse> verifyPasswordUrl(@PathVariable("key") String key, @PathVariable("password") String password, @PathVariable("confirmPassword") String confirmPassword){
+        userService.renewPassword(key, password, confirmPassword);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message("Password reset successfully")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
     }
 
     private URI getUri() {
